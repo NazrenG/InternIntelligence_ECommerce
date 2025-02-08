@@ -1,7 +1,5 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.Entities.Models;
+﻿using ECommerce.Business.Abstract;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -19,7 +17,6 @@ namespace ECommerce.WebAPI.Controllers
             _orderService = orderService;
             _orderItemService = orderItemService;
         }
-
         [Authorize]
         [HttpGet("OrderItems")]
         public async Task<IActionResult> GetOrderItems()
@@ -30,13 +27,19 @@ namespace ECommerce.WebAPI.Controllers
                 return Unauthorized(new { message = "User ID not found!" });
             }
 
-            var order = await _orderService.GetOrdersByUserId(userId);
-            if (order == null || order.Items == null || !order.Items.Any())
+            var orders = await _orderService.GetOrdersByUserId(userId);
+            if (orders == null || !orders.Any())
             {
-                return NotFound(new { message = "No items found in the order!" });
+                return NotFound(new { message = "No orders found!" });
             }
 
-            return Ok(order.Items.ToList());
+            var items = orders.Select(o => o.Items).ToList();
+            if (!items.Any())
+            {
+                return NotFound(new { message = "No items found in the orders!" });
+            }
+
+            return Ok(items);
         }
         [Authorize]
         [HttpGet("TotalCount")]
@@ -48,18 +51,18 @@ namespace ECommerce.WebAPI.Controllers
                 return Unauthorized(new { message = "User ID not found!" });
             }
 
-            var order = await _orderService.GetOrdersByUserId(userId);
-            if (order == null || order.Items == null || !order.Items.Any())
+            var orders = await _orderService.GetOrdersByUserId(userId);
+            if (orders == null || !orders.Any())
             {
-                return NotFound(new { message = "Order item is empty!" });
+                return NotFound(new { message = "No orders found!" });
             }
 
-            var count = order.Items.Sum(p => p.Price * p.Count);
-            return Ok(count);
+            var total = orders.SelectMany(o => o.Items).Sum(item => item.Price * item.Count);
+            return Ok(total);
         }
 
-
         [Authorize]
+
         [HttpPut("OrderItemCount/{id}")]
         public async Task<IActionResult> ChangeItemCount(int id, [FromBody] bool checkChange)
         {
@@ -69,23 +72,24 @@ namespace ECommerce.WebAPI.Controllers
                 return Unauthorized(new { message = "User ID not found!" });
             }
 
-            var order = await _orderService.GetOrdersByUserId(userId);
-            if (order == null || order.Items == null || !order.Items.Any())
+            var item = await _orderItemService.GetOrderItemById(id);
+            if (item == null)
             {
-                return NotFound(new { message = "Order item is empty!" });
+                return NotFound(new { message = "Order item not found!" });
             }
-
-            await _orderItemService.ChangeCount(checkChange, id);
-            return Ok(new { message = "Item count updated successfully." });
+            await _orderItemService.ChangeCount(checkChange,id);
+            
+            return Ok(new { message = "Item count updated successfully.", item.Count });
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPut("OrderStatus/{id}")]
         public async Task<IActionResult> ChangeOrderStatus(int id, [FromBody] string status)
         {
-            if (string.IsNullOrWhiteSpace(status))
+            var validStatuses = new List<string> { "pending", "ready", "shipped", "cancelled" };
+            if (string.IsNullOrWhiteSpace(status) || !validStatuses.Contains(status.ToLower()))
             {
-                return BadRequest(new { message = "Status cannot be empty." });
+                return BadRequest(new { message = "Invalid status. Valid statuses: pending, ready, shipped, cancelled." });
             }
 
             var order = await _orderService.GetOrderById(id);
@@ -95,12 +99,11 @@ namespace ECommerce.WebAPI.Controllers
             }
 
             order.Status = status;
-              await _orderService.UpdateOrder(order);
+            await _orderService.UpdateOrder(order);
 
-            
-
-            return Ok(new { message = "Order status updated successfully." });
+            return Ok(new { message = "Order status updated successfully.", order.Status });
         }
+
     }
 }
   

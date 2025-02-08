@@ -5,9 +5,9 @@ using ECommerce.Entities.Models;
 
 namespace ECommerce.DataAccess.Concrete
 {
-    public class CategoryRepository : EFEntityBaseRepository<ECommerceDbContext, Category>, ICategoryRepository
+    public class UserRepository : EFEntityBaseRepository<ECommerceDbContext, User>, IUserRepository
     {
-        public CategoryRepository(ECommerceDbContext context) : base(context)
+        public UserRepository(ECommerceDbContext context) : base(context)
         {
         }
     }

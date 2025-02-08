@@ -1,7 +1,7 @@
-﻿using ECommerce.Business.Abstarct;
+﻿using ECommerce.Business.Abstract;
 using ECommerce.Entities.Models;
 using ECommerce.WebAPI.Dtos;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,6 +17,7 @@ namespace ECommerce.WebAPI.Controllers
         {
             _categoryService = categoryService;
         }
+        [Authorize]
         [HttpGet("AllCategories")]
         public async Task<IActionResult> GetCategories()
         {
@@ -27,7 +28,7 @@ namespace ECommerce.WebAPI.Controllers
             });
             return Ok(list);
         }
-
+        [Authorize]
         [HttpGet("Category/{id}")]
         public async Task<IActionResult> GetCategory(int id)
         {
@@ -38,7 +39,7 @@ namespace ECommerce.WebAPI.Controllers
             return Ok(new CategoryDto { Name = item.Name });
         }
 
-
+        [Authorize(Roles = "Admin")]
         [HttpPost("NewCategory")]
         public async Task<IActionResult> AddCategory([FromBody] CategoryDto dto)
         {
@@ -53,7 +54,7 @@ namespace ECommerce.WebAPI.Controllers
 
             return CreatedAtAction(nameof(GetCategory), new { id = item.Id }, new CategoryDto { Name = item.Name });
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPut("UpdateCategory/{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDto dto)
         {
@@ -69,7 +70,7 @@ namespace ECommerce.WebAPI.Controllers
 
             return NoContent();
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("DeleteCategory/{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {

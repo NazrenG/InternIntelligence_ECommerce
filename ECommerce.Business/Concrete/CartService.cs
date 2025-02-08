@@ -1,11 +1,7 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.DataAccess.Abstarct;
+﻿
+using ECommerce.Business.Abstract;
+using ECommerce.DataAccess.Abstract;
 using ECommerce.Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.Business.Concrete
 {
@@ -16,6 +12,11 @@ namespace ECommerce.Business.Concrete
         public CartService(ICartRepository cartRepository)
         {
             _cartRepository = cartRepository;
+        }
+
+        public async Task AddCart(Cart cart)
+        {
+        await _cartRepository.Add(cart);
         }
 
         public async Task<Cart> GetCartByUserId(string userId)

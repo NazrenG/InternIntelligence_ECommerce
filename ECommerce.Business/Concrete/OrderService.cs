@@ -1,12 +1,7 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.DataAccess.Abstarct;
-using ECommerce.DataAccess.Concrete;
+﻿
+using ECommerce.Business.Abstract;
+using ECommerce.DataAccess.Abstract;
 using ECommerce.Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.Business.Concrete
 {
@@ -39,7 +34,7 @@ namespace ECommerce.Business.Concrete
             return await _orderRepository.GetById(p => p.Id == id);
         }
 
-        public async Task<Order> GetOrdersByUserId(string userId)
+        public async Task<List<Order>> GetOrdersByUserId(string userId)
         {
            return await _orderRepository.GetOrderItems(userId);
         }

@@ -1,4 +1,5 @@
-﻿using ECommerce.Entities.Models;
+﻿using ECommerce.Business.Abstract;
+using ECommerce.Entities.Models;
 using ECommerce.WebAPI.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -16,12 +17,17 @@ namespace ECommerce.WebAPI.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly UserManager<User> _userManager;
+        private readonly IUserService      _userService;
+        private readonly ICartService _cartService;
 
-        public AuthController(IConfiguration configuration, UserManager<User> userManager)
+        public AuthController(IConfiguration configuration, UserManager<User> userManager, IUserService userService, ICartService cartService = null)
         {
             _configuration = configuration;
             _userManager = userManager;
+            _userService = userService;
+            _cartService = cartService;
         }
+
         [HttpPost("Register")]
         public async Task<IActionResult> SignUp(SignUpDto dto)
         {
@@ -41,7 +47,8 @@ namespace ECommerce.WebAPI.Controllers
 
                 var role = string.IsNullOrEmpty(dto.Role) || (dto.Role != "Admin" && dto.Role != "User") ? "User" : dto.Role;
                 await _userManager.AddToRoleAsync(user, role);
-
+             var userId=   await _userService.GetLastUserId();
+                await _cartService.AddCart(new Cart { UserId = userId });
                 return Ok(new { Status = "Success", Message = "User created successfully!" });
             }
 

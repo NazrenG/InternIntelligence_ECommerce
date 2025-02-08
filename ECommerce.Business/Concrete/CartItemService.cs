@@ -1,11 +1,7 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.DataAccess.Abstarct;
+﻿
+using ECommerce.Business.Abstract;
+using ECommerce.DataAccess.Abstract;
 using ECommerce.Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.Business.Concrete
 {
@@ -35,9 +31,8 @@ namespace ECommerce.Business.Concrete
         }
 
         public async Task<List<CartItem>> GetAllItemsForCartId(int cartId)
-        {
-            var item=await repository.GetById(p=>p.Id==cartId); 
-            return await repository.GetAll(p=>p.Id == item.Id);
+        { 
+            return await repository.GetItems(cartId);
         }
 
         public async Task<CartItem> GetCartItemById(int id)

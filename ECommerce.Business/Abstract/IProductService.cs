@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommerce.Business.Abstarct
+namespace ECommerce.Business.Abstract
 {
     public interface IProductService
     {
@@ -14,8 +14,8 @@ namespace ECommerce.Business.Abstarct
         public Task<Product> GetProductById(int id);
         public Task DeleteProduct(int id);
         public Task UpdateProduct(Product product);
-        public Task<Product> GetProductByCategoryId(int categoryId);
-        
+        public Task<List<Product>> GetProductByCategoryId(int categoryId);
 
+        public Task ChangeCount(bool check, int id);
     }
 }

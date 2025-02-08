@@ -1,8 +1,7 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.Business.Concrete;
+﻿using ECommerce.Business.Abstract;
 using ECommerce.Entities.Models;
 using ECommerce.WebAPI.Dtos;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.WebAPI.Controllers
@@ -58,7 +57,7 @@ namespace ECommerce.WebAPI.Controllers
             return Ok(product);
         }
 
-
+        [Authorize(Roles = "Admin")]
         [HttpPost("NewProduct")]
         public async Task<IActionResult> AddProduct([FromBody] ProductDto dto)
         {
@@ -85,6 +84,7 @@ namespace ECommerce.WebAPI.Controllers
 
             return Ok(item);
         }
+        [Authorize(Roles = "Admin")]
 
         [HttpPut("UpdateProduct/{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDto dto)
@@ -104,16 +104,29 @@ namespace ECommerce.WebAPI.Controllers
             if (item == null)
                 return NotFound(new { message = "Product was not found!" });
 
-            item.Name = dto.Name;
+            item.Name = string.IsNullOrEmpty(dto.Name)?item.Name:dto.Name;
             item.Count = dto.Count;
-            item.ImageUrl = dto.ImageUrl;
-            item.Description = dto.Description;
+            item.ImageUrl = string.IsNullOrEmpty(dto.ImageUrl) ? item.ImageUrl : dto.ImageUrl;
+            item.Description = string.IsNullOrEmpty(dto.Description) ? item.Description : dto.Description; ;
             item.Price = dto.Price;
             item.CategoryId = categoryId;
             await _productService.UpdateProduct(item);
 
             return NoContent();
         }
+        [Authorize(Roles = "Admin")]
+        [HttpPut("UpdatedProductCount/{id}")]
+        public async Task<IActionResult> UpdateProductCount(int id, [FromBody] bool checkCountChange)
+        {
+            var item = await _productService.GetProductById(id);
+            if (item == null)
+                return NotFound(new { message = "Product was not found!" });
+          await _productService.ChangeCount(checkCountChange,id);   
+            return NoContent();
+        }
+
+
+        [Authorize(Roles = "Admin")]
 
         [HttpDelete("DeleteProduct/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
@@ -124,6 +137,25 @@ namespace ECommerce.WebAPI.Controllers
 
             await _productService.DeleteProduct(id);
             return NoContent();
+        }
+
+
+        [HttpGet("ProductByCategoryName")]
+        public async Task<IActionResult> GetProductByCategoryName(string category)
+        {
+
+            var caytegoryId=await _categoryService.GetCategoryByName(category);
+            var items = await _productService.GetProductByCategoryId(caytegoryId);
+            var list = items.Select(p => new ProductDto
+            {
+                Name = p.Name,
+                Count = p.Count,
+                ImageUrl = p.ImageUrl,
+                Description = p.Description,
+                Price = p.Price,
+                CategoryName = p.Category?.Name
+            }).ToList();
+            return Ok(list);
         }
 
     }

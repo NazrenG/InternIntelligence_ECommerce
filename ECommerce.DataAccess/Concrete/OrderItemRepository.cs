@@ -1,5 +1,5 @@
 ﻿using ECommerce.Core.DataAccess.EntityFramework;
-using ECommerce.DataAccess.Abstarct;
+using ECommerce.DataAccess.Abstract;
 using ECommerce.Entities.Data;
 using ECommerce.Entities.Models;
 

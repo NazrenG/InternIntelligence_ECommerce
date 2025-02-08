@@ -1,13 +1,8 @@
 ﻿using ECommerce.Core.DataAccess.EntityFramework;
-using ECommerce.DataAccess.Abstarct;
+using ECommerce.DataAccess.Abstract;
 using ECommerce.Entities.Data;
 using ECommerce.Entities.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.DataAccess.Concrete
 {
@@ -19,9 +14,9 @@ namespace ECommerce.DataAccess.Concrete
             _context = context;
         }
 
-        public async Task<Order> GetOrderItems(string userId)
+        public async Task<List<Order>> GetOrderItems(string userId)
         {
-            return await _context.Orders.Include(oi => oi.Items).FirstOrDefaultAsync(p => p.UserId == userId);
+            return await _context.Orders.Include(oi => oi.Items).Where(p => p.UserId == userId).ToListAsync();
         }
     }
 }

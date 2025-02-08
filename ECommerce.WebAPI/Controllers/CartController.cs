@@ -1,5 +1,5 @@
-﻿using ECommerce.Business.Abstarct;
-using ECommerce.Entities.Models;
+﻿using ECommerce.Business.Abstract;
+using ECommerce.WebAPI.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,43 +18,70 @@ namespace ECommerce.WebAPI.Controllers
             _cartService = cartService;
             _cartItemService = cartItemService;
         }
-
         [Authorize]
         [HttpGet("UserCartItems")]
         public async Task<IActionResult> GetUserCartItem()
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not found.");
+            }
+
             var cart = await _cartService.GetCartByUserId(userId);
             if (cart == null)
             {
-                return NotFound(new { message = "Cart item is empty!" });
+                return NotFound(new { message = "Cart not found!" });
             }
-            return Ok(cart.CartItems.ToList());
 
+            var cartItems = await _cartItemService.GetAllItemsForCartId(cart.Id);
+            var list = cartItems.Select(c => new ProductDto
+            {
+                Name = c.Product?.Name,
+                Price = c.Product.Price,
+                CategoryName = c.Product.Category.Name,
+                Count = c.Product.Count,
+                Description = c.Product.Description,
+                ImageUrl = c.Product.ImageUrl,
+            }).ToList();
+            return Ok(list);
         }
+
         [Authorize]
-        [HttpPost("NewCartItem")]
-        public async Task<IActionResult> AddUserCartItem([FromBody] CartItem dto)
+        [HttpPost("NewCartItem/{productId}")]
+        public async Task<IActionResult> AddUserCartItem(int productId)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            var cart = await _cartService.GetCartByUserId(userId);
-            var existingCartItem = cart.CartItems?.FirstOrDefault(pi => pi.ProductId == dto.ProductId);
-            if (existingCartItem == null)
+            if (string.IsNullOrEmpty(userId))
             {
-                cart.CartItems?.Add(dto);
+                return Unauthorized("User not found.");
             }
 
-            return Ok(cart);
+            var cart = await _cartService.GetCartByUserId(userId);
+            if (cart == null)
+            {
+                return NotFound("Cart not found.");
+            }
 
+            var existingCartItem = cart.CartItems?.FirstOrDefault(pi => pi.ProductId == productId);
+            if (existingCartItem != null)
+            {
+                return BadRequest(new { message = "Item already exists in the cart." });
+            }
+
+            var item = new Entities.Models.CartItem { CartId = cart.Id, ProductId = productId };
+            await _cartItemService.AddCartItem(item);
+
+            return Ok(new { message = "Cart item created successfully!" });
         }
+
 
         [Authorize]
         [HttpDelete("DeletedItem/{id}")]
         public async Task<IActionResult> DeleteCartItem(int id)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized("User not found.");
             }
@@ -68,39 +95,14 @@ namespace ECommerce.WebAPI.Controllers
             var item = await _cartItemService.GetCartItemById(id);
             if (item == null || item.CartId != cart.Id)
             {
-                return NotFound("Cart item not found");
-            }
-            await _cartItemService.DeleteCartItem(id);  
-           
-            return Ok(new { message = "Cart item deleted succesfully.", cart });
-        }
-        [Authorize]
-        [HttpDelete("{productId}")]
-        public async Task<IActionResult> RemoveFromCart(int productId)
-        {
-            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-            {
-                return Unauthorized("User not found");
-            }
-
-            var cart = await _cartService.GetCartByUserId(userId);
-            if (cart == null)
-            {
-                return NotFound("User card not found");
-            }
-
-            var cartItem = cart.CartItems.FirstOrDefault(ci => ci.ProductId == productId);
-            if (cartItem == null)
-            {
                 return NotFound("Cart item not found.");
             }
 
-            cart.CartItems.Remove(cartItem);
-            await _cartService.UpdateCart(cart);    
-
-            return Ok(cart);
+            await _cartItemService.DeleteCartItem(id);
+            return Ok(new { message = "Cart item deleted successfully." });
         }
+
+
 
     }
 }
